@@ -1,7 +1,7 @@
-import { callPopup, eventSource, event_types, getRequestHeaders, saveSettingsDebounced } from '../../../../script.js';
+import { eventSource, event_types, getRequestHeaders, saveSettingsDebounced } from '../../../../script.js';
 import { extension_settings } from '../../../extensions.js';
-import { POPUP_RESULT, POPUP_TYPE, Popup } from '../../../popup.js';
-import { executeSlashCommands, registerSlashCommand } from '../../../slash-commands.js';
+import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from '../../../popup.js';
+import { executeSlashCommandsWithOptions, SlashCommand, SlashCommandParser } from '../../../slash-commands.js';
 import { delay, navigation_option } from '../../../utils.js';
 import { createWorldInfoEntry, deleteWIOriginalDataValue, deleteWorldInfoEntry, importWorldInfo, loadWorldInfo, saveWorldInfo, world_info } from '../../../world-info.js';
 
@@ -47,12 +47,12 @@ const activatePresetByName = async(name)=>{
 };
 export const activatePreset = async(preset)=>{
     //TODO use delta instead of brute force
-    await executeSlashCommands('/world silent=true {{newline}}');
+    await executeSlashCommandsWithOptions('/world silent=true {{newline}}');
     settings.presetName = preset?.name ?? '';
     updateSelect();
     if (preset) {
         for (const world of settings.presetList.find(it=>it.name == settings.presetName).worldList) {
-            await executeSlashCommands(`/world silent=true ${world}`);
+            await executeSlashCommandsWithOptions(`/world silent=true ${world}`);
         }
     }
 };
@@ -128,7 +128,7 @@ const loadBook = async(name)=>{
 
 const importBooks = async(data)=>{
     if (data.books && Object.keys(data.books).length > 0) {
-        const doImport = await callPopup(`<h3>The preset contains World Info books. Import the books?<h3>`, 'confirm');
+        const doImport = await callGenericPopup(`<h3>The preset contains World Info books. Import the books?<h3>`, 'confirm');
         if (doImport) {
             for (const key of Object.keys(data.books)) {
                 const book = data.books[key];
@@ -166,9 +166,9 @@ const importSinglePreset = async(file)=>{
                     or keep the name to ovewrite the existing preset.
                 </h4>
             `;
-            const newName = await callPopup(popupText, 'input', data.name);
+            const newName = await callGenericPopup(popupText, 'input', data.name);
             if (newName == data.name) {
-                const overwrite = await callPopup(`<h3>Overwrite World Info Preset "${newName}"?</h3>`, 'confirm');
+                const overwrite = await callGenericPopup(`<h3>Overwrite World Info Preset "${newName}"?</h3>`, POPUP_TYPE.CONFIRM);
                 if (overwrite) {
                     old.worldList = data.worldList;
                     await importBooks(data);
@@ -196,7 +196,7 @@ const importSinglePreset = async(file)=>{
 };
 
 const createPreset = async()=>{
-    const name = await callPopup('<h3>Preset Name:</h3>', 'input', settings.presetName);
+    const name = await callGenericPopup('<h3>Preset Name:</h3>', 'input', settings.presetName);
     if (!name) return;
     const preset = new Preset();
     preset.name = name;
@@ -242,7 +242,7 @@ const init = ()=>{
                 btnRename.classList.add('fa-solid', 'fa-pencil');
                 btnRename.title = 'Rename current preset';
                 btnRename.addEventListener('click', async()=>{
-                    const name = await callPopup('<h3>Rename Preset:</h3>', 'input', settings.presetName);
+                    const name = await callGenericPopup('<h3>Rename Preset:</h3>', 'input', settings.presetName);
                     if (!name) return;
                     settings.preset.name = name;
                     settings.presetName = name;
@@ -305,7 +305,7 @@ const init = ()=>{
                         <h3>Export World Info Preset: "${settings.presetName}"</h3>
                         <h4>Include the books' contents in the exported file?</h4>
                     `;
-                    const includeBooks = await callPopup(popupText, 'confirm');
+                    const includeBooks = await callGenericPopup(popupText, 'confirm');
                     const data = settings.preset.toJSON();
                     if (includeBooks) {
                         let names = world_info.globalSelect;
@@ -335,7 +335,7 @@ const init = ()=>{
                 btnDelete.title = 'Delete the current preset';
                 btnDelete.addEventListener('click', async()=>{
                     if (settings.presetName == '') return;
-                    const confirmed = await callPopup(`<h3>Delete World Info Preset "${settings.presetName}"?</h3>`, 'confirm');
+                    const confirmed = await callGenericPopup(`<h3>Delete World Info Preset "${settings.presetName}"?</h3>`, 'confirm');
                     if (confirmed) {
                         settings.presetList.splice(settings.presetList.indexOf(settings.preset), 1);
                         settings.presetName = '';
@@ -402,15 +402,13 @@ init();
 
 
 
-registerSlashCommand('wipreset',
-    (args, value)=>{
-        activatePresetByName(value);
-    },
-    [],
-    '<span class="monospace">(optional preset name)</span> – Activate a World Info preset. Leave name blank to deactivate current preset (unload all WI books).',
-    true,
-    true,
-);
+SlashCommandParser.addCommandObject(SlashCommand.fromProps({  
+    name: 'wipreset',  
+    callback: (args, value) => {  
+        activatePresetByName(value);  
+    },  
+    helpString: '<span class="monospace">(optional preset name)</span> – Activate a World Info preset. Leave name blank to deactivate current preset (unload all WI books).',  
+}));
 
 
 
