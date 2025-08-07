@@ -1,12 +1,9 @@
-import { eventSource, event_types, getRequestHeaders, saveSettingsDebounced } from '../../../../script.js';
-import { extension_settings } from '../../../extensions.js';
-import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from '../../../popup.js';
-import { executeSlashCommandsWithOptions, SlashCommand, SlashCommandParser } from '../../../slash-commands.js';
-import { delay, navigation_option } from '../../../utils.js';
-import { createWorldInfoEntry, deleteWIOriginalDataValue, deleteWorldInfoEntry, importWorldInfo, loadWorldInfo, saveWorldInfo, world_info } from '../../../world-info.js';
-
-
-
+import { eventSource, event_types, getRequestHeaders, saveSettingsDebounced } from '../../../../script.js';  
+import { POPUP_RESULT, POPUP_TYPE, Popup, callGenericPopup } from '../../../popup.js';  
+import { executeSlashCommandsWithOptions } from '../../../slash-commands.js';  
+import { SlashCommandParser, SlashCommand } from '../../../slash-commands/SlashCommandParser.js';  
+import { delay, navigation_option } from '../../../utils.jss';  
+import { createWorldInfoEntry, deleteWIOriginalDataValue, deleteWorldInfoEntry, importWorldInfo, loadWorldInfo, saveWorldInfo, world_info } from '../../../world-info.js';  
 
 export class Settings {
     static from(props) {
